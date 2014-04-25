@@ -1,0 +1,76 @@
+<html>
+  <head>
+    <style type="text/css">
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      #container {
+        width : 600px;
+        height: 384px;
+        margin: 8px auto;
+      }
+     </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <!--[if IE]>
+    <script type="text/javascript" src="path/to/flashcanvas.js"></script>
+    <![endif]-->
+    <script type="text/javascript" src="../flotr2.js"></script>
+    <script type="text/javascript">
+  (function () {
+    var
+    d1    = [],
+    start = new Date("2013/10/18 00:00").getTime(),
+    options,
+    graph,
+    i, x, o;
+
+  for (i = 0; i < 100; i++) {
+    x = start+(i*1000*3600*24*36.5);
+    d1.push([x, i+Math.random()*30+Math.sin(i/20+Math.random()*2)*20+Math.sin(i/10+Math.random())*10]);
+  }
+        
+  options = {
+    xaxis : {
+      mode : 'time', 
+      labelsAngle : 45
+    },
+    selection : {
+      mode : 'x'
+    },
+    HtmlText : false,
+    title : 'Time'
+  };
+        
+  // Draw graph with default options, overwriting with passed options
+  function drawGraph (opts) {
+
+    // Clone the options, so the 'options' variable always keeps intact.
+    o = Flotr._.extend(Flotr._.clone(options), opts || {});
+
+    // Return a new graph.
+    return Flotr.draw(
+      container,
+      [ d1 ],
+      o
+    );
+  }
+
+  graph = drawGraph();      
+        
+  Flotr.EventAdapter.observe(container, 'flotr:select', function(area){
+    // Draw selected area
+    graph = drawGraph({
+      xaxis : { min : area.x1, max : area.x2, mode : 'time', labelsAngle : 45 },
+      yaxis : { min : area.y1, max : area.y2 }
+    });
+  });
+        
+  // When graph is clicked, draw the graph with default area.
+  Flotr.EventAdapter.observe(container, 'flotr:click', function () { graph = drawGraph(); });
+})(document.getElementById("editor-render-0"));
+     </script>
+  </body>
+</html>

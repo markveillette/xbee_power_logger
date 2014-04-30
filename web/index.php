@@ -26,10 +26,10 @@
 <?php
     
     // Location of data
-    $datahome = "/home/pi/xbee/data/"
+    $datahome = "/home/pi/xbee/data/";
     
     // Time zone
-    date_default_timezone_set("America/New_York");
+    date_default_timezone_set('America/New_York');
     
     // Default to today
     $temptimestamp = mktime(0,0,0,date("m",time()),date("d",time()),date("Y",time()));
@@ -42,7 +42,7 @@
 	}
     
     // Construct filename from time stamp
-    $filename = $datahome."/".date("Y",$temptimestamp)."/".date($temptimestamp,"ymd").".csv";
+    $filename = $datahome."/".date("Y",$temptimestamp)."/".date("ymd",$temptimestamp).".csv";
         
     // For converting watts to watthr
     $C = 1.0 / 3600.0;
@@ -72,19 +72,20 @@
                 // Skip the header row
                 if( $row == 0 )
                 {
+                    $row += 1;
                     continue;
-                }
+                 }
                 
                 // Entries are time_string, unix_time (GMT), amperes, watts
                 $time_string = $data[0];
                 
                 // Time string format is yyyy-mm-ddTHH:MM:SS in local time zone
                 // Need to convert back to unix_time in this time zone.
-                $unix_time_local = mktime(substr($time_String,11,2), 
-                                          substr($time_String,14,2),
-                                          substr($time_String,17,2),
-                                          substr($time_String,5,2),
-                                          substr($time_String,8,2),
+                $unix_time_local = mktime(substr($time_string,11,2), 
+                                          substr($time_string,14,2),
+                                          substr($time_string,17,2),
+                                          substr($time_string,5,2),
+                                          substr($time_string,8,2),
                                           substr($time_string,0,4));
                 
                 // Flotr expects time stamps in milliseconds
@@ -118,6 +119,10 @@
             }
         }
     }
+    else
+    {
+        echo "File Not Found ".$filename;
+    }
         
     $html =  
 '    <title> Power monitoring - '.date("m/d/Y",$temptimestamp).'</title>
@@ -126,8 +131,9 @@
     <div id ="container">
       <div id="calendar"></div>
       <h1>Power monitoroing - '.date("m/d/Y",$temptimestamp).'</h1>
-    </div> 
-    <div id="table">';
+      </div>
+      
+    ';
     if($max_watts == -100 )
     {
         $html .= '        No data found';
@@ -136,11 +142,11 @@
     {
         $html .=  '        <table>';
 		$html .=  '          <tr><td>Max power</td><td align="right">'.number_format($max_watts,1).'W</td></tr>';
-		$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'&deg;C</td></tr>';
+		$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'Wh</td></tr>';
 		$html .=  '        </table>';
     }
     $html .=
-'   </div> 
+'   </div> </div>
     <div id="chart1"></div>';
     echo $html;
  ?>   
@@ -175,10 +181,11 @@ function changeImage(ImageID,ImageName)
 		title: 'Time',
       },
 	  yaxis: {
-        min: -15,
-        max: 105,
         showLabels: true, 
-		title: 'Temp \xB0 F',
+		title: 'W',
+      },
+      y2axis: {
+          title: 'Wh'
       },
       selection : {
         mode : 'x'

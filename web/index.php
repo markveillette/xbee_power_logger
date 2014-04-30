@@ -23,64 +23,126 @@
 	  };
     </script>
 	
-	<?php
-    // Get Time stamp.  If none is provided in URL, use today's date
-	// temptimestamp is a unix time
-	$datahome = "/home/pi/xbee/data/"
-	$temptimestamp = mktime(0,0,0,date("m",time()),date("d",time()),date("Y",time()));
-	$filename = $datahome.date($temptimestamp,"ymd")
-	if(isset($_GET["date"]))
+<?php
+    
+    // Location of data
+    $datahome = "/home/pi/xbee/data/"
+    
+    // Time zone
+    date_default_timezone_set("America/New_York");
+    
+    // Default to today
+    $temptimestamp = mktime(0,0,0,date("m",time()),date("d",time()),date("Y",time()));
+    
+    // Check if date is provided in URL
+    if(isset($_GET["date"])) 
 	{
-		$filename = $datahome.substr($_GET["date"],0,4).substr($_GET["date"],2,2).substr($_GET["date"],5,2).substr($_GET["date"],8,2).".csv"
-		if(file_exists($filename))
-		{
-		    $temptimestamp = mktime(0,0,0,substr($_GET["date"],5,2),substr($_GET["date"],8,2),substr($_GET["date"],0,4));
-		}
+        // A date has been given in the URL
+        $temptimestamp = mktime(0,0,0,substr($_GET["date"],5,2),substr($_GET["date"],8,2),substr($_GET["date"],0,4));
 	}
-	
-	$row = 1;
-	$aldablights = $hermanlights = $heater = 0;
-	$time = $d1 = $d2 = $d3 = $d4 = $plug1 = $plug2 = $plug3 = $plug4 = array();
-	$d1min = $d2min = $d3min = 100;
-	$d1max = $d2max = $d3max = -100;
-	if (($handle = fopen("/home/pi/xbee/data/".substr($_GET["date"],0,4).substr($_GET["date"],2,2).substr($_GET["date"],5,2).substr($_GET["date"],8,2).".csv", "r")) !== FALSE) 
-	
-
-	// Put data into arrays
-	$indoor_temp = array();
-	$outdoor_temp = array();
-	if ($res)
-	{
-		while($row = mysql_fetch_array($res))
-		{
-			$time_string = $row[0];
-			$hour = intval(substr($time_string,11,2));
-			$min = intval(substr($time_string,14,2));
-			$sec = intval(substr($time_string,17,2));
-			$year = intval( substr($time_string,0,4));
-			$mon  = intval(substr($time_string,5,2));
-			$day  = intval(substr($time_string,8,2));
-			$unix_time_stamp = mktime( $hour,$min,$sec,$mon,$day,$year)."000";
-			$indoor_temp[] = '['.$unix_time_stamp.','.$row[1].']';
-			$outdoor_temp[] = '['.$unix_time_stamp.','.$row[2].']';
-		}
-	}
-	else
-	{
-		echo mysql_error();
-	}
-	
-	// Close connection
-    mysql_close( $handle );
- $html =  '  <title> Room Temperatures - '.date("m/d/Y",$temptimestamp).'</title>
+    
+    // Construct filename from time stamp
+    $filename = $datahome."/".date("Y",$temptimestamp)."/".date($temptimestamp,"ymd").".csv";
+        
+    // For converting watts to watthr
+    $C = 1.0 / 3600.0;
+    
+    // Check if this file exists
+    $data_found = FALSE;
+    if(file_exists($filename))
+    {
+        $data_found = TRUE;
+        
+        // Init arrays
+        $watts_vs_time  = array();
+        $watthr_vs_time = array();
+        $t0             = 0;
+        $dt             = 0;
+        $max_watts      = -100;
+        
+        // Initialize watthr to 0 for the day
+        $watthr = 0;
+        
+        // Open file
+        if (($handle = fopen($filename, "r")) !== FALSE) 
+        {
+            $row = 0;
+            while (($data = fgetcsv($handle, 1000, ",")) !== FALSE)
+            {
+                // Skip the header row
+                if( $row == 0 )
+                {
+                    continue;
+                }
+                
+                // Entries are time_string, unix_time (GMT), amperes, watts
+                $time_string = $data[0];
+                
+                // Time string format is yyyy-mm-ddTHH:MM:SS in local time zone
+                // Need to convert back to unix_time in this time zone.
+                $unix_time_local = mktime(substr($time_String,11,2), 
+                                          substr($time_String,14,2),
+                                          substr($time_String,17,2),
+                                          substr($time_String,5,2),
+                                          substr($time_String,8,2),
+                                          substr($time_string,0,4));
+                
+                // Flotr expects time stamps in milliseconds
+                $unix_time_local = $unix_time_local."000";
+                
+                $watts = $data[3];
+                if( $row == 1 )
+                {
+                    $watthr = 0;
+                    $t0 = $data[1];
+                }
+                else
+                {
+                    $dt = $data[1] - $t0;
+                    // If too much time has passed since reading, don't trust results
+                    if( $dt < 3600 )
+                    {
+                        $watthr += $watts * $dt * $C;
+                    }
+                    $t0 = $data[1];
+                }
+                                          
+                // Put results in an array which will be plotted
+                $watts_vs_time[]  = '['.$unix_time_local.','.$watts.']';
+                $watthr_vs_time[] = '['.$unix_time_local.','.$watthr.']';
+                $max_watts        = max($max_watts,$watts);
+                
+                // Increase row count by 1
+                $row += 1;
+                
+            }
+        }
+    }
+        
+    $html =  
+'    <title> Power monitoring - '.date("m/d/Y",$temptimestamp).'</title>
   </head>
   <body>
     <div id ="container">
       <div id="calendar"></div>
-      <h1>Room Temperature - '.date("m/d/Y",$temptimestamp).'</h1>
+      <h1>Power monitoroing - '.date("m/d/Y",$temptimestamp).'</h1>
     </div> 
+    <div id="table">';
+    if($max_watts == -100 )
+    {
+        $html .= '        No data found';
+    }
+    else
+    {
+        $html .=  '        <table>';
+		$html .=  '          <tr><td>Max power</td><td align="right">'.number_format($max_watts,1).'W</td></tr>';
+		$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'&deg;C</td></tr>';
+		$html .=  '        </table>';
+    }
+    $html .=
+'   </div> 
     <div id="chart1"></div>';
-echo $html;
+    echo $html;
  ?>   
 <script type="text/javascript" src="flotr2.js"></script>
 <script type="text/javascript">
@@ -91,8 +153,8 @@ function changeImage(ImageID,ImageName)
                         }
   (function () {
     var
-    indoor    = [<?php echo implode(',',$indoor_temp) ?>],
-	outdoor   = [<?php echo implode(',',$outdoor_temp) ?>],
+    power    = [<?php echo implode(',',$watts_vs_time) ?>],
+	energy   = [<?php echo implode(',',$watthr_vs_time) ?>],
 	options,
     graph,
 	i, x, o;
@@ -150,8 +212,8 @@ function changeImage(ImageID,ImageName)
     // Return a new graph.
     return Flotr.draw(
       chart1,[
-	  { data : indoor, label :'Room Temperature' },
-	  { data : outdoor, label :'Outdoor Temperature' },
+	  { data : power, label :'Power (W)', xaxis: 1, yaxis: 1 },
+	  { data : energy, label :'Energy (Wh)', xaxis: 1, yaxis: 2  },
 	  ],
       o
     );

@@ -141,9 +141,9 @@
     else
     {
         $html .=  '        <table>';
-		$html .=  '          <tr><td>Max power</td><td align="right">'.number_format($max_watts,1).'W</td></tr>';
-		$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'Wh</td></tr>';
-		$html .=  '        </table>';
+	$html .=  '          <tr><td>Max power</td><td align="right">'.number_format($max_watts,1).'W</td></tr>';
+	$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'Wh</td></tr>';
+	$html .=  '        </table>';
     }
     $html .=
 '   </div> </div>
@@ -154,9 +154,9 @@
 <script type="text/javascript">
 function changeImage(ImageID,ImageName)
         {
-                    document.getElementById(ImageID).src = ImageName+".png";
-                            document.getElementById(ImageID).alt = ImageName;
-                        }
+            document.getElementById(ImageID).src = ImageName+".png";
+            document.getElementById(ImageID).alt = ImageName;
+        }
   (function () {
     var
     power    = [<?php echo implode(',',$watts_vs_time) ?>],
@@ -180,7 +180,7 @@ function changeImage(ImageID,ImageName)
         noTicks: 10,
 		title: 'Time',
       },
-	  yaxis: {
+      yaxis: {
         showLabels: true, 
 		title: 'W',
       },
@@ -198,7 +198,7 @@ function changeImage(ImageID,ImageName)
         var t = parseInt(o.x);
         var myDate = new Date(t);
 		//<![CDATA[
-        var string = myDate.getHours() + ":" + (myDate.getMinutes() <10 ?'0':'') + myDate.getMinutes() + "<br/>" + o.y + "\u00B0";
+        var string = myDate.getHours() + ":" + (myDate.getMinutes() <10 ?'0':'') + myDate.getMinutes() + "<br/>" + o.y;
 		 //]]>		
         return string;
       }

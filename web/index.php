@@ -198,7 +198,7 @@ function changeImage(ImageID,ImageName)
         var t = parseInt(o.x);
         var myDate = new Date(t);
 		//<![CDATA[
-        var string = myDate.getHours() + ":" + (myDate.getMinutes() <10 ?'0':'') + myDate.getMinutes() + "<br/>" + o.y + "\u00B0" + "F";
+        var string = myDate.getHours() + ":" + (myDate.getMinutes() <10 ?'0':'') + myDate.getMinutes() + "<br/>" + o.y + "\u00B0";
 		 //]]>		
         return string;
       }

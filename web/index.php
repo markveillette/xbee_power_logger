@@ -131,7 +131,7 @@
     <div id ="container">
       <div id="calendar"></div>
       <h1>Power monitoroing - '.date("m/d/Y",$temptimestamp).'</h1>
-      </div>
+      
       
     ';
     if($max_watts == -100 )
@@ -140,7 +140,7 @@
     }
     else
     {
-        $html .=  '        <table>';
+        $html .=  '        <table align="center">';
 	$html .=  '          <tr><td>Max power</td><td align="right">'.number_format($max_watts,1).'W</td></tr>';
 	$html .=  '          <tr><td>Total intake</td><td align="right">'.number_format($watthr,1).'Wh</td></tr>';
 	$html .=  '        </table>';
